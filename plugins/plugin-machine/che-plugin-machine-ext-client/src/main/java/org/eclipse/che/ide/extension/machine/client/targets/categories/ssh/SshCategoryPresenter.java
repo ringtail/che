@@ -15,6 +15,7 @@ import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.inject.Inject;
 import com.google.web.bindery.event.shared.EventBus;
 
+import org.eclipse.che.api.core.model.machine.Machine;
 import org.eclipse.che.api.machine.shared.dto.MachineLimitsDto;
 import org.eclipse.che.api.machine.shared.dto.MachineConfigDto;
 import org.eclipse.che.api.machine.shared.dto.MachineDto;
@@ -23,14 +24,19 @@ import org.eclipse.che.api.machine.shared.dto.event.MachineStatusEvent;
 import org.eclipse.che.api.machine.shared.dto.recipe.NewRecipe;
 import org.eclipse.che.api.machine.shared.dto.recipe.RecipeDescriptor;
 import org.eclipse.che.api.machine.shared.dto.recipe.RecipeUpdate;
+import org.eclipse.che.api.promises.client.Function;
+import org.eclipse.che.api.promises.client.FunctionException;
 import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.OperationException;
 import org.eclipse.che.api.promises.client.Promise;
 import org.eclipse.che.api.promises.client.PromiseError;
+import org.eclipse.che.api.workspace.shared.dto.WorkspaceDto;
+import org.eclipse.che.api.workspace.shared.dto.WorkspaceRuntimeDto;
 import org.eclipse.che.ide.api.app.AppContext;
 import org.eclipse.che.ide.api.dialogs.CancelCallback;
 import org.eclipse.che.ide.api.dialogs.ConfirmCallback;
 import org.eclipse.che.ide.api.dialogs.DialogFactory;
+import org.eclipse.che.ide.api.machine.MachineEntity;
 import org.eclipse.che.ide.api.machine.MachineServiceClient;
 import org.eclipse.che.ide.api.machine.RecipeServiceClient;
 import org.eclipse.che.ide.api.notification.NotificationManager;
@@ -566,13 +572,14 @@ public class SshCategoryPresenter implements CategoryPage, TargetManager, SshVie
         new Timer() {
             @Override
             public void run() {
-                machineService.getMachine(workspaceId, machineId).then(new Operation<MachineDto>() {
+                getMachine(workspaceId, machineId).then(new Operation<Machine>() {
                     @Override
-                    public void apply(MachineDto machineDto) throws OperationException {
-                        if (machineDto.getStatus() == RUNNING) {
-                            connectNotification.setTitle(machineLocale.targetsViewConnectSuccess(machineDto.getConfig().getName()));
+                    public void apply(Machine machine) throws OperationException {
+                        if (machine != null && machine.getStatus() == RUNNING) {
+                            final String machineName = machine.getConfig().getName();
+                            connectNotification.setTitle(machineLocale.targetsViewConnectSuccess(machineName));
                             connectNotification.setStatus(StatusNotification.Status.SUCCESS);
-                            updateTargets(machineDto.getConfig().getName());
+                            updateTargets(machineName);
                         } else {
                             onConnectingFailed(null);
                         }
@@ -585,6 +592,26 @@ public class SshCategoryPresenter implements CategoryPage, TargetManager, SshVie
                 });
             }
         }.schedule(500);
+    }
+
+    private Promise<Machine> getMachine(final String workspaceId, final String machineId) {
+        return workspaceServiceClient.getWorkspace(workspaceId).then(new Function<WorkspaceDto, Machine>() {
+            @Override
+            public Machine apply(WorkspaceDto workspace) throws FunctionException {
+                final WorkspaceRuntimeDto workspaceRuntime = workspace.getRuntime();
+                if (workspaceRuntime == null) {
+                    return null;
+                }
+
+                final List<MachineDto> machines = workspaceRuntime.getMachines();
+                for (MachineDto machineDto : machines) {
+                    if (machineId.equals(machineDto.getId())) {
+                        return machineDto;
+                    }
+                }
+                return null;
+            }
+        });
     }
 
     /**

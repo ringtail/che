@@ -13,6 +13,7 @@ package org.eclipse.che.ide.extension.machine.client.perspective.widgets.machine
 import com.google.gwtmockito.GwtMockitoTestRunner;
 
 import org.eclipse.che.api.core.model.machine.MachineStatus;
+import org.eclipse.che.ide.api.machine.MachineEntity;
 import org.eclipse.che.ide.extension.machine.client.MachineLocalizationConstant;
 import org.eclipse.che.ide.extension.machine.client.machine.Machine;
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class MachineInfoViewImplTest {
 
     //additional mocks
     @Mock
-    private Machine machine;
+    private MachineEntity machine;
 
     @InjectMocks
     private MachineInfoViewImpl view;

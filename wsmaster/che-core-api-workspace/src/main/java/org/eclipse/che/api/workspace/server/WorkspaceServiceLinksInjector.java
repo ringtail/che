@@ -144,6 +144,13 @@ public class WorkspaceServiceLinksInjector {
                                                                                       .withDefaultValue(format(ENVIRONMENT_STATUS_CHANNEL_TEMPLATE,
                                                                                                                workspace.getId())))));
 
+        final WorkspaceRuntimeDto runtime = workspace.getRuntime();
+        if (workspace.getStatus() == RUNNING && runtime != null) {
+            runtime.getMachines()
+                   .stream()
+                   .forEach(machine -> injectMachineLinks(machine, serviceContext));
+        }
+
         // add links for running workspace
         injectRuntimeLinks(workspace, ideUri, uriBuilder);
         return workspace.withLinks(links);

@@ -18,6 +18,7 @@ import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.OperationException;
 import org.eclipse.che.api.promises.client.PromiseError;
 import org.eclipse.che.api.user.shared.dto.ProfileDto;
+import org.eclipse.che.ide.api.machine.MachineEntity;
 import org.eclipse.che.ide.api.user.UserProfileServiceClient;
 import org.eclipse.che.ide.api.workspace.WorkspaceServiceClient;
 import org.eclipse.che.api.workspace.shared.dto.WorkspaceDto;
@@ -64,7 +65,7 @@ public class MachineInfoPresenter implements TabPresenter {
      * @param machine
      *         machine for which need update panel
      */
-    public void update(@NotNull Machine machine) {
+    public void update(@NotNull MachineEntity machine) {
 
         Unmarshallable<ProfileDto> profileUnMarshaller = unmarshallerFactory.newUnmarshaller(ProfileDto.class);
 

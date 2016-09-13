@@ -14,21 +14,30 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.web.bindery.event.shared.EventBus;
 
-import org.eclipse.che.api.machine.shared.dto.MachineConfigDto;
 import org.eclipse.che.api.machine.shared.dto.MachineDto;
+import org.eclipse.che.api.promises.client.Function;
+import org.eclipse.che.api.promises.client.FunctionException;
 import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.OperationException;
 import org.eclipse.che.api.promises.client.Promise;
-import org.eclipse.che.api.promises.client.PromiseError;
-import org.eclipse.che.ide.api.machine.MachineServiceClient;
+import org.eclipse.che.api.workspace.shared.dto.WorkspaceDto;
+import org.eclipse.che.api.workspace.shared.dto.WorkspaceRuntimeDto;
+import org.eclipse.che.ide.api.machine.MachineEntity;
 import org.eclipse.che.ide.api.notification.NotificationManager;
+import org.eclipse.che.ide.api.workspace.WorkspaceServiceClient;
 import org.eclipse.che.ide.api.workspace.event.MachineStatusChangedEvent;
 import org.eclipse.che.ide.extension.machine.client.MachineLocalizationConstant;
+import org.eclipse.che.ide.extension.machine.client.inject.factories.EntityFactory;
 import org.eclipse.che.ide.ui.loaders.LoaderPresenter;
+import org.eclipse.che.ide.util.loging.Log;
+
+import java.util.List;
 
 import static org.eclipse.che.ide.api.notification.StatusNotification.DisplayMode.EMERGE_MODE;
 import static org.eclipse.che.ide.api.notification.StatusNotification.Status.FAIL;
 import static org.eclipse.che.ide.api.notification.StatusNotification.Status.SUCCESS;
+import static org.eclipse.che.ide.extension.machine.client.machine.MachineStateEvent.MachineAction.CREATING;
+import static org.eclipse.che.ide.extension.machine.client.machine.MachineStateEvent.MachineAction.RUNNING;
 
 /**
  * Notifies about changing machine state.
@@ -41,17 +50,20 @@ public class MachineStatusNotifier implements MachineStatusChangedEvent.Handler 
     private final EventBus                    eventBus;
     private final NotificationManager         notificationManager;
     private final MachineLocalizationConstant locale;
-    private final MachineServiceClient        machineServiceClient;
     private final LoaderPresenter             loader;
+    private final WorkspaceServiceClient      workspaceService;
+    private final EntityFactory               entityFactory;
 
     @Inject
     MachineStatusNotifier(final EventBus eventBus,
-                          final MachineServiceClient machineServiceClient,
+                          final EntityFactory entityFactory,
+                          final WorkspaceServiceClient workspaceService,
                           final NotificationManager notificationManager,
                           final MachineLocalizationConstant locale,
                           final LoaderPresenter loader) {
         this.eventBus = eventBus;
-        this.machineServiceClient = machineServiceClient;
+        this.entityFactory = entityFactory;
+        this.workspaceService = workspaceService;
         this.notificationManager = notificationManager;
         this.locale = locale;
         this.loader = loader;
@@ -67,10 +79,10 @@ public class MachineStatusNotifier implements MachineStatusChangedEvent.Handler 
 
         switch (event.getEventType()) {
             case CREATING:
-                getMachine(workspaceId, machineId).then(notifyMachineCreating());
+                getMachine(workspaceId, machineId).then(notifyMachineCreating(machineName));
                 break;
             case RUNNING:
-                getMachine(workspaceId, machineId).then(notifyMachineRunning());
+                getMachine(workspaceId, machineId).then(notifyMachineRunning(machineName));
                 break;
             case DESTROYED:
                 notificationManager.notify(locale.notificationMachineDestroyed(machineName), SUCCESS, EMERGE_MODE);
@@ -81,44 +93,61 @@ public class MachineStatusNotifier implements MachineStatusChangedEvent.Handler 
         }
     }
 
-    private Promise<MachineDto> getMachine(final String workspaceId, final String machineId) {
-        return machineServiceClient.getMachine(workspaceId, machineId).catchError(new Operation<PromiseError>() {
+    private Promise<MachineEntity> getMachine(final String workspaceId, final String machineId) {
+        return workspaceService.getWorkspace(workspaceId).then(new Function<WorkspaceDto, MachineEntity>() {
             @Override
-            public void apply(PromiseError arg) throws OperationException {
-                notificationManager.notify(locale.failedToFindMachine(machineId));
+            public MachineEntity apply(WorkspaceDto workspace) throws FunctionException {
+                WorkspaceRuntimeDto workspaceRuntime = workspace.getRuntime();
+                if (workspaceRuntime == null) {
+                    return null;
+                }
+
+                List<MachineDto> machines = workspaceRuntime.getMachines();
+                for (MachineDto machineDto : machines) {
+                    if (machineId.equals(machineDto.getId())) {
+                        return entityFactory.createMachine(machineDto);
+                    }
+                }
+                return null;
             }
         });
     }
 
-    private Operation<MachineDto> notifyMachineCreating() {
-        return new Operation<MachineDto>() {
+    private Operation<MachineEntity> notifyMachineCreating(final String machineName) {
+        return new Operation<MachineEntity>() {
             @Override
-            public void apply(MachineDto machine) throws OperationException {
-                if (machine.getConfig().isDev()) {
+            public void apply(MachineEntity machine) throws OperationException {
+                if (machine == null) {
+                    notificationManager.notify(locale.failedToFindMachine(machineName));
+                    return;
+                }
+
+                if (machine.isDev()) {
                     // Will be used later
                     // loader.setProgress(LoaderPresenter.Phase.STARTING_WORKSPACE_RUNTIME, LoaderPresenter.Status.LOADING);
                 }
-
-                eventBus.fireEvent(new MachineStateEvent(machine, MachineStateEvent.MachineAction.CREATING));
+                eventBus.fireEvent(new MachineStateEvent(machine, CREATING));
             }
         };
     }
 
-    private Operation<MachineDto> notifyMachineRunning() {
-        return new Operation<MachineDto>() {
+    private Operation<MachineEntity> notifyMachineRunning(final String machineName) {
+        return new Operation<MachineEntity>() {
             @Override
-            public void apply(MachineDto machine) throws OperationException {
-                final MachineConfigDto machineConfig = machine.getConfig();
-                if (machineConfig.isDev()) {
+            public void apply(MachineEntity machine) throws OperationException {
+                if (machine == null) {
+                    notificationManager.notify(locale.failedToFindMachine(machineName));
+                    return;
+                }
+
+                if (machine.isDev()) {
                     // Will be used later
                     // loader.setProgress(LoaderPresenter.Phase.STARTING_WORKSPACE_RUNTIME, LoaderPresenter.Status.SUCCESS);
                 }
 
-                final String message = locale.notificationMachineIsRunning(machineConfig.getName());
-                notificationManager.notify(message, SUCCESS, EMERGE_MODE);
-                eventBus.fireEvent(new MachineStateEvent(machine, MachineStateEvent.MachineAction.RUNNING));
+                notificationManager.notify(locale.notificationMachineIsRunning(machineName), SUCCESS, EMERGE_MODE);
+                eventBus.fireEvent(new MachineStateEvent(machine, RUNNING));
             }
         };
     }
-
 }

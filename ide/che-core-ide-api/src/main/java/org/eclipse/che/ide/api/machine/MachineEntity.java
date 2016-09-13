@@ -8,24 +8,29 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.extension.machine.client.processes;
+package org.eclipse.che.ide.api.machine;
 
-import org.eclipse.che.ide.api.machine.MachineEntity;
+import org.eclipse.che.api.core.model.machine.Machine;
 
-import javax.validation.constraints.NotNull;
+import java.util.Map;
 
 /**
- * Handler for the processing of click on 'Add new terminal' button
+ * Defines machine entity on client side.
  *
- * @author Anna Shumilova
+ * @author Roman Nikitenko
  */
-public interface AddTerminalClickHandler {
+public interface MachineEntity extends Machine {
 
-    /**
-     * Will be called when user clicks 'Add new terminal' button
-     *
-     * @param machine
-     *         machine in which the terminal will be added
-     */
-    void onAddTerminalClick(@NotNull MachineEntity machine);
+    boolean isDev();
+
+    /** @return type of current machine */
+    String getType();
+
+    /** @return current machine's display name */
+    String getDisplayName();
+
+    /** Returns information about machine. */
+    Map<String, String> getProperties();
+
+    String getTerminalUrl();
 }

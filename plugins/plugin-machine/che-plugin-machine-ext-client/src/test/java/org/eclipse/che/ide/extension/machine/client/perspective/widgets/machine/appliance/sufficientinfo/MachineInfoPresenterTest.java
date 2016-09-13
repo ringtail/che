@@ -14,6 +14,7 @@ import com.google.gwt.user.client.ui.AcceptsOneWidget;
 
 import org.eclipse.che.api.promises.client.Promise;
 import org.eclipse.che.api.user.shared.dto.ProfileDto;
+import org.eclipse.che.ide.api.machine.MachineEntity;
 import org.eclipse.che.ide.api.user.UserProfileServiceClient;
 import org.eclipse.che.ide.api.workspace.WorkspaceServiceClient;
 import org.eclipse.che.api.workspace.shared.dto.WorkspaceConfigDto;
@@ -62,7 +63,7 @@ public class MachineInfoPresenterTest {
 
     //additional mocks
     @Mock
-    private Machine                      machine;
+    private MachineEntity                machine;
     @Mock
     private AcceptsOneWidget             container;
     @Mock

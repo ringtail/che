@@ -96,7 +96,7 @@ public interface MachineLocalizationConstant extends Messages {
     String noDevMachine();
 
     @Key("messages.machine.not.found")
-    String machineNotFound(String machineId);
+    String machineNotFound(String machineName);
 
     /* MachineStateNotifier */
     @Key("notification.creatingMachine")

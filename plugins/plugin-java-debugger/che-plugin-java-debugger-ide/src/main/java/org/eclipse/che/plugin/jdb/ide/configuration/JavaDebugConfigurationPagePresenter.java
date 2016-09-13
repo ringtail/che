@@ -14,16 +14,15 @@ import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import org.eclipse.che.ide.api.machine.MachineServiceClient;
 import org.eclipse.che.api.machine.shared.dto.MachineDto;
 import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.OperationException;
 import org.eclipse.che.ide.api.app.AppContext;
 import org.eclipse.che.ide.api.debug.DebugConfiguration;
 import org.eclipse.che.ide.api.debug.DebugConfigurationPage;
+import org.eclipse.che.ide.api.machine.MachineEntity;
+import org.eclipse.che.ide.api.machine.MachineServiceClient;
 import org.eclipse.che.ide.extension.machine.client.inject.factories.EntityFactory;
-import org.eclipse.che.ide.extension.machine.client.machine.Machine;
-import org.eclipse.che.ide.extension.machine.client.perspective.widgets.machine.appliance.server.Server;
 import org.eclipse.che.ide.util.Pair;
 
 import javax.validation.constraints.NotNull;
@@ -88,7 +87,7 @@ public class JavaDebugConfigurationPagePresenter implements JavaDebugConfigurati
                                         appContext.getDevMachine().getId()).then(new Operation<MachineDto>() {
             @Override
             public void apply(MachineDto machineDto) throws OperationException {
-                Machine machine = entityFactory.createMachine(machineDto);
+                MachineEntity machine = entityFactory.createMachine(machineDto);
                 List<Pair<String, String>> ports = extractPortsList(machine);
                 view.setPortsList(ports);
             }
@@ -96,17 +95,17 @@ public class JavaDebugConfigurationPagePresenter implements JavaDebugConfigurati
     }
 
     /** Extracts list of ports available for connecting to the remote debugger. */
-    private List<Pair<String, String>> extractPortsList(Machine machine) {
+    private List<Pair<String, String>> extractPortsList(MachineEntity machine) {
         List<Pair<String, String>> ports = new ArrayList<>();
-        for (Server server : machine.getServersList()) {
-            if (server.getPort().endsWith("/tcp")) {
-                String portWithoutTcp = server.getPort().substring(0, server.getPort().length() - 4);
-                String description = portWithoutTcp + " (" + server.getRef() + ")";
-                Pair<String, String> pair = new Pair<>(description, portWithoutTcp);
-
-                ports.add(pair);
-            }
-        }
+//        for (Server server : machine.getServersList()) {
+//            if (server.getPort().endsWith("/tcp")) {
+//                String portWithoutTcp = server.getPort().substring(0, server.getPort().length() - 4);
+//                String description = portWithoutTcp + " (" + server.getRef() + ")";
+//                Pair<String, String> pair = new Pair<>(description, portWithoutTcp);
+//
+//                ports.add(pair);
+//            }
+//        }
 
         return ports;
     }

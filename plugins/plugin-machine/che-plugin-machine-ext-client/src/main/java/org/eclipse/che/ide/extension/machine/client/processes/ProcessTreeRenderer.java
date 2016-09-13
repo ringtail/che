@@ -19,8 +19,9 @@ import elemental.html.SpanElement;
 
 import com.google.inject.Inject;
 
-import org.eclipse.che.api.machine.shared.dto.MachineDto;
-import org.eclipse.che.api.machine.shared.dto.MachineRuntimeInfoDto;
+import org.eclipse.che.api.core.model.machine.MachineConfig;
+import org.eclipse.che.api.core.model.machine.MachineRuntimeInfo;
+import org.eclipse.che.ide.api.machine.MachineEntity;
 import org.eclipse.che.ide.api.parts.PartStackUIResources;
 import org.eclipse.che.ide.extension.machine.client.MachineLocalizationConstant;
 import org.eclipse.che.ide.extension.machine.client.MachineResources;
@@ -83,7 +84,10 @@ public class ProcessTreeRenderer implements NodeRenderer<ProcessTreeNode> {
         SpanElement treeNode;
         switch (node.getType()) {
             case MACHINE_NODE:
-                treeNode = createMachineElement(node, (MachineDto)node.getData());
+                treeNode = createMachineElement(node);
+                break;
+            case MACHINE_OUTPUT_NODE:
+                treeNode = createMachineOutputElement(node);
                 break;
             case COMMAND_NODE:
                 treeNode = createCommandElement(node);
@@ -113,9 +117,13 @@ public class ProcessTreeRenderer implements NodeRenderer<ProcessTreeNode> {
         return machineLabel;
     }
 
-    private SpanElement createMachineElement(final ProcessTreeNode node, final MachineDto machine) {
+    private SpanElement createMachineElement(final ProcessTreeNode node) {
+        final MachineEntity machine = (MachineEntity)node.getData();
+        final MachineConfig machineConfig = machine.getConfig();
+        final String machineName = machineConfig.getName();
+        final String machineCategory = machineConfig.isDev() ? locale.devMachineCategory() : machineConfig.getType();
+
         SpanElement root = Elements.createSpanElement();
-        final String machineCategory = machine.getConfig().isDev() ? locale.devMachineCategory() : machine.getConfig().getType();
         root.appendChild(createMachineLabel(machineCategory));
 
         Element statusElement = Elements.createSpanElement(resources.getCss().machineStatus());
@@ -142,8 +150,7 @@ public class ProcessTreeRenderer implements NodeRenderer<ProcessTreeNode> {
                        MIDDLE,
                        locale.viewNewTerminalTooltip());
 
-        MachineRuntimeInfoDto runtime = machine.getRuntime();
-
+        MachineRuntimeInfo runtime = machine.getRuntime();
         if (runtime != null && runtime.getServers().containsKey(SSH_PORT + "/tcp")) {
             SpanElement sshButton = Elements.createSpanElement(resources.getCss().sshButton());
             sshButton.setTextContent("SSH");
@@ -153,7 +160,7 @@ public class ProcessTreeRenderer implements NodeRenderer<ProcessTreeNode> {
                 @Override
                 public void handleEvent(Event event) {
                     if (previewSshClickHandler != null) {
-                        previewSshClickHandler.onPreviewSshClick(machine.getId());
+                        previewSshClickHandler.onPreviewSshClick(machineName);
                     }
                 }
             }, true);
@@ -171,7 +178,7 @@ public class ProcessTreeRenderer implements NodeRenderer<ProcessTreeNode> {
                 event.preventDefault();
 
                 if (addTerminalClickHandler != null) {
-                    addTerminalClickHandler.onAddTerminalClick(machine.getWorkspaceId(), machine.getId());
+                    addTerminalClickHandler.onAddTerminalClick(machine);
                 }
             }
         }, true);
@@ -202,7 +209,32 @@ public class ProcessTreeRenderer implements NodeRenderer<ProcessTreeNode> {
         monitorsElement.appendChild(monitorNode);
 
         Element nameElement = Elements.createSpanElement(resources.getCss().nameLabel());
-        nameElement.setTextContent(machine.getConfig().getName());
+        nameElement.setTextContent(machineName);
+        root.appendChild(nameElement);
+
+        return root;
+    }
+
+    private SpanElement createMachineOutputElement(final ProcessTreeNode node) {
+        SpanElement root = Elements.createSpanElement();
+
+        Element statusElement = Elements.createSpanElement(resources.getCss().machineStatus());
+        root.appendChild(statusElement);
+
+        if (node.isRunning()) {
+            statusElement.appendChild(Elements.createDivElement(resources.getCss().machineStatusRunning()));
+        } else {
+            statusElement.appendChild(Elements.createDivElement(resources.getCss().machineStatusPausedLeft()));
+            statusElement.appendChild(Elements.createDivElement(resources.getCss().machineStatusPausedRight()));
+        }
+
+        Tooltip.create(statusElement,
+                       BOTTOM,
+                       MIDDLE,
+                       locale.viewMachineRunningTooltip());
+
+        Element nameElement = Elements.createSpanElement(resources.getCss().nameLabel());
+        nameElement.setTextContent(node.getName());
         root.appendChild(nameElement);
 
         return root;

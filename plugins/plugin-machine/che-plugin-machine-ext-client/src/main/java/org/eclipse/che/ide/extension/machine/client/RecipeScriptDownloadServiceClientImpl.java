@@ -11,6 +11,7 @@
 package org.eclipse.che.ide.extension.machine.client;
 
 import org.eclipse.che.api.promises.client.Promise;
+import org.eclipse.che.ide.api.machine.MachineEntity;
 import org.eclipse.che.ide.extension.machine.client.machine.Machine;
 import org.eclipse.che.ide.rest.AsyncRequestFactory;
 import org.eclipse.che.ide.rest.RestContext;
@@ -33,7 +34,7 @@ public class RecipeScriptDownloadServiceClientImpl implements RecipeScriptDownlo
     }
 
     @Override
-    public Promise<String> getRecipeScript(Machine machine) {
+    public Promise<String> getRecipeScript(MachineEntity machine) {
         return asyncRequestFactory
                 .createGetRequest(restContext + "/recipe/script/" + machine.getWorkspaceId() + "/" + machine.getId())
                 .send(new StringUnmarshaller());

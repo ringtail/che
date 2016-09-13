@@ -11,7 +11,7 @@
 package org.eclipse.che.ide.extension.machine.client;
 
 import org.eclipse.che.api.promises.client.Promise;
-import org.eclipse.che.ide.extension.machine.client.machine.Machine;
+import org.eclipse.che.ide.api.machine.MachineEntity;
 
 /**
  * @author Mihail Kuznyetsov.
@@ -25,5 +25,5 @@ public interface RecipeScriptDownloadServiceClient {
      *         machine to fetch script for
      * @return content of the recipe script
      */
-    Promise<String> getRecipeScript(Machine machine);
+    Promise<String> getRecipeScript(MachineEntity machine);
 }

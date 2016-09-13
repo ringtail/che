@@ -23,9 +23,9 @@ public interface PreviewSshClickHandler {
     /**
      * Will be called when user clicks 'Preview SSH' button
      *
-     * @param machineId
-     *         id of machine in which ssh keys are located
+     * @param machineName
+     *         name of the machine in which ssh keys are located
      *
      */
-    void onPreviewSshClick(@NotNull String machineId);
+    void onPreviewSshClick(@NotNull String machineName);
 }

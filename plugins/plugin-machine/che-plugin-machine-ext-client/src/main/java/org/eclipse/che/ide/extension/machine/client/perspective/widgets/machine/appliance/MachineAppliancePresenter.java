@@ -18,6 +18,7 @@ import com.google.web.bindery.event.shared.EventBus;
 import org.eclipse.che.commons.annotation.Nullable;
 import org.eclipse.che.ide.api.event.ActivePartChangedEvent;
 import org.eclipse.che.ide.api.event.ActivePartChangedHandler;
+import org.eclipse.che.ide.api.machine.MachineEntity;
 import org.eclipse.che.ide.part.widgets.TabItemFactory;
 import org.eclipse.che.ide.extension.machine.client.MachineLocalizationConstant;
 import org.eclipse.che.ide.extension.machine.client.inject.factories.EntityFactory;
@@ -62,7 +63,7 @@ public class MachineAppliancePresenter extends PartStackPresenter implements Act
     private final EntityFactory               entityFactory;
     private final MachineLocalizationConstant locale;
 
-    private Machine selectedMachine;
+    private MachineEntity selectedMachine;
 
     @Inject
     public MachineAppliancePresenter(EventBus eventBus,
@@ -99,9 +100,9 @@ public class MachineAppliancePresenter extends PartStackPresenter implements Act
         TabSelectHandler terminalHandler = new TabSelectHandler() {
             @Override
             public void onTabSelected() {
-                selectedMachine.setActiveTabName(terminalTabName);
+//                selectedMachine.setActiveTabName(terminalTabName);
 
-                terminalContainer.addOrShowTerminal(selectedMachine);
+//                terminalContainer.addOrShowTerminal(selectedMachine);
             }
         };
         createAndAddTab(terminalTabName, terminalContainer, terminalHandler);
@@ -109,7 +110,7 @@ public class MachineAppliancePresenter extends PartStackPresenter implements Act
         TabSelectHandler infoHandler = new TabSelectHandler() {
             @Override
             public void onTabSelected() {
-                selectedMachine.setActiveTabName(infoTabName);
+//                selectedMachine.setActiveTabName(infoTabName);
             }
         };
         createAndAddTab(infoTabName, infoPresenter, infoHandler);
@@ -117,7 +118,7 @@ public class MachineAppliancePresenter extends PartStackPresenter implements Act
         TabSelectHandler serverHandler = new TabSelectHandler() {
             @Override
             public void onTabSelected() {
-                selectedMachine.setActiveTabName(serverTabName);
+//                selectedMachine.setActiveTabName(serverTabName);
             }
         };
         createAndAddTab(serverTabName, serverPresenter, serverHandler);
@@ -141,17 +142,17 @@ public class MachineAppliancePresenter extends PartStackPresenter implements Act
      * @param machine
      *         machine for which need show info
      */
-    public void showAppliance(Machine machine) {
+    public void showAppliance(MachineEntity machine) {
         selectedMachine = machine;
 
         view.showContainer(tabContainer.getView());
 
-        tabContainer.showTab(machine.getActiveTabName());
+//        tabContainer.showTab(machine.getActiveTabName());
 
-        terminalContainer.addOrShowTerminal(machine);
-        infoPresenter.update(machine);
-        recipeTabPresenter.updateInfo(machine);
-        serverPresenter.updateInfo(machine);
+//        terminalContainer.addOrShowTerminal(machine);
+//        infoPresenter.update(machine);
+//        recipeTabPresenter.updateInfo(machine);
+//        serverPresenter.updateInfo(machine);
     }
 
     /** {@inheritDoc} */

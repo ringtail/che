@@ -12,11 +12,12 @@ package org.eclipse.che.ide.extension.machine.client.inject.factories;
 
 import com.google.inject.assistedinject.Assisted;
 
+import org.eclipse.che.api.core.model.machine.Machine;
 import org.eclipse.che.api.machine.shared.dto.MachineDto;
 import org.eclipse.che.api.machine.shared.dto.ServerDto;
 import org.eclipse.che.api.machine.shared.dto.recipe.RecipeDescriptor;
 import org.eclipse.che.commons.annotation.Nullable;
-import org.eclipse.che.ide.extension.machine.client.machine.Machine;
+import org.eclipse.che.ide.api.machine.MachineEntity;
 import org.eclipse.che.ide.extension.machine.client.perspective.widgets.machine.appliance.server.Server;
 import org.eclipse.che.ide.extension.machine.client.perspective.widgets.machine.panel.MachineTreeNode;
 import org.eclipse.che.ide.extension.machine.client.perspective.widgets.recipe.editor.RecipeEditorPanel;
@@ -39,9 +40,9 @@ public interface EntityFactory {
     /**
      * Creates machine object.
      *
-     * @return an instance of {@link Machine}
+     * @return an implementation of {@link Machine}
      */
-    Machine createMachine(@NotNull MachineDto descriptor);
+    MachineEntity createMachine(@NotNull MachineDto descriptor);
 
     /**
      * Creates tab entity using special parameters.

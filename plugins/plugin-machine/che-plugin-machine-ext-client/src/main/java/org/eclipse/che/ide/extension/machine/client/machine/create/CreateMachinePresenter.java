@@ -14,14 +14,21 @@ import com.google.gwt.regexp.shared.RegExp;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import org.eclipse.che.ide.api.machine.MachineManager;
-import org.eclipse.che.ide.api.machine.MachineServiceClient;
-import org.eclipse.che.ide.api.machine.RecipeServiceClient;
+import org.eclipse.che.api.core.model.machine.Machine;
 import org.eclipse.che.api.machine.shared.dto.MachineDto;
 import org.eclipse.che.api.machine.shared.dto.recipe.RecipeDescriptor;
+import org.eclipse.che.api.promises.client.Function;
+import org.eclipse.che.api.promises.client.FunctionException;
 import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.OperationException;
+import org.eclipse.che.api.promises.client.Promise;
+import org.eclipse.che.api.workspace.shared.dto.WorkspaceDto;
+import org.eclipse.che.api.workspace.shared.dto.WorkspaceRuntimeDto;
 import org.eclipse.che.ide.api.app.AppContext;
+import org.eclipse.che.ide.api.machine.DevMachine;
+import org.eclipse.che.ide.api.machine.MachineManager;
+import org.eclipse.che.ide.api.machine.RecipeServiceClient;
+import org.eclipse.che.ide.api.workspace.WorkspaceServiceClient;
 
 import java.util.Collections;
 import java.util.List;
@@ -44,23 +51,23 @@ public class CreateMachinePresenter implements CreateMachineView.ActionDelegate 
     private static final int    SKIP_COUNT  = 0;
     private static final int    MAX_COUNT   = 100;
 
-    private final CreateMachineView    view;
-    private final AppContext           appContext;
-    private final MachineManager       machineManager;
-    private final RecipeServiceClient  recipeServiceClient;
-    private final MachineServiceClient machineServiceClient;
+    private final CreateMachineView   view;
+    private final AppContext          appContext;
+    private final MachineManager      machineManager;
+    private final RecipeServiceClient recipeServiceClient;
+    private final WorkspaceServiceClient workspaceService;
 
     @Inject
     public CreateMachinePresenter(CreateMachineView view,
                                   AppContext appContext,
                                   MachineManager machineManager,
                                   RecipeServiceClient recipeServiceClient,
-                                  MachineServiceClient machineServiceClient) {
+                                  WorkspaceServiceClient workspaceService) {
         this.view = view;
         this.appContext = appContext;
         this.machineManager = machineManager;
         this.recipeServiceClient = recipeServiceClient;
-        this.machineServiceClient = machineServiceClient;
+        this.workspaceService = workspaceService;
 
         view.setDelegate(this);
     }
@@ -134,19 +141,40 @@ public class CreateMachinePresenter implements CreateMachineView.ActionDelegate 
     public void onReplaceDevMachineClicked() {
         final String machineName = view.getMachineName();
         final String recipeURL = view.getRecipeURL();
-
-        if (appContext.getDevMachine() != null) {
-            machineServiceClient.getMachine(appContext.getWorkspaceId(),
-                                            appContext.getDevMachine().getId()).then(new Operation<MachineDto>() {
+        final DevMachine devMachine = appContext.getDevMachine();
+        if (devMachine != null) {
+            getMachine(devMachine.getWorkspaceId(), devMachine.getId()).then(new Operation<Machine>() {
                 @Override
-                public void apply(MachineDto machine) throws OperationException {
-                    machineManager.destroyMachine(machine);
+                public void apply(Machine machine) throws OperationException {
+                    if (machine != null) {
+                        machineManager.destroyMachine(machine);
+                    }
                 }
             });
         }
 
         machineManager.startDevMachine(recipeURL, machineName);
         view.close();
+    }
+
+    private Promise<Machine> getMachine(final String workspaceId, final String machineId) {
+        return workspaceService.getWorkspace(workspaceId).then(new Function<WorkspaceDto, Machine>() {
+            @Override
+            public Machine apply(WorkspaceDto workspace) throws FunctionException {
+                final WorkspaceRuntimeDto workspaceRuntime = workspace.getRuntime();
+                if (workspaceRuntime == null) {
+                    return null;
+                }
+
+                final List<MachineDto> machines = workspaceRuntime.getMachines();
+                for (MachineDto machineDto : machines) {
+                    if (machineId.equals(machineDto.getId())) {
+                        return machineDto;
+                    }
+                }
+                return null;
+            }
+        });
     }
 
     @Override
